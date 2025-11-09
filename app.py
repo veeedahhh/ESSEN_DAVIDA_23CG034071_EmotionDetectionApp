@@ -47,7 +47,7 @@ if uploaded_file is not None:
 
     #Convert to RBG if necessary(ensures 3 color channels)
 
-    if img.mode != "RGB":
+if img.mode != "RGB":
     img = img.convert("RGB")  # ensure 3 color channels
 
 
