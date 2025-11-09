@@ -45,9 +45,11 @@ if uploaded_file is not None:
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    # Convert to grayscale if needed
-    if img.mode != "L":
-        img = img.convert("L")  # grayscale
+    #Convert to RBG if necessary(ensures 3 color channels)
+
+    if img.mode != "RGB":
+    img = img.convert("RGB")  # ensure 3 color channels
+
 
     # Resize image to 48x48 (the model’s input size)
     img = img.resize((48, 48))
@@ -63,9 +65,7 @@ if uploaded_file is not None:
     img_array = np.expand_dims(img_array, axis=0)
     img_array = img_array.astype("float32") / 255.0
 
-    #Debugging Info
-    st.write("Image array shape:", img_array.shape)
-    st.write("Model input shape:", model.input_shape)
+   
     # Prediction
     with st.spinner("Analyzing emotion..."):
         predictions = model.predict(img_array)
