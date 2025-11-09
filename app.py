@@ -1,49 +1,68 @@
-from flask import Flask, render_template, request, jsonify
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import img_to_array, load_img
+
+import streamlit as st
+import tensorflow as tf
 import numpy as np
-import os
+from tensorflow.keras.preprocessing import image
+from PIL import Image
 
-app = Flask(__name__)
+# ----------------------------
+# Title and description
+# ----------------------------
+st.set_page_config(page_title="Emotion Detection App", page_icon="😊", layout="centered")
 
+st.title("😊 Emotion Detection App")
+st.write("Upload an image, and the model will predict the emotion displayed.")
+
+# ----------------------------
 # Load the trained model
-model = load_model('model.h5')
+# ----------------------------
+@st.cache_resource
+def load_model():
+    model = tf.keras.models.load_model("model.h5")
+    return model
 
-# Define emotion labels (update according to your model's classes)
-emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
+model = load_model()
 
-@app.route('/')
-def index():
-    return render_template('index.html')  # Make sure you have an index.html in 'templates'
+# ----------------------------
+# Define emotion labels
+# ----------------------------
+emotion_labels = {
+    0: "Angry",
+    1: "Disgust",
+    2: "Fear",
+    3: "Happy",
+    4: "Neutral",
+    5: "Sad",
+    6: "Surprise"
+}
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+# ----------------------------
+# File uploader
+# ----------------------------
+uploaded_file = st.file_uploader("Upload an image file", type=["jpg", "jpeg", "png"])
 
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-
-    # Save uploaded image temporarily
-    filepath = os.path.join('uploads', file.filename)
-    os.makedirs('uploads', exist_ok=True)
-    file.save(filepath)
+if uploaded_file is not None:
+    img = Image.open(uploaded_file)
+    st.image(img, caption="Uploaded Image", use_column_width=True)
 
     # Preprocess image
-    img = load_img(filepath, target_size=(48, 48), color_mode='grayscale')
-    img_array = img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0
+    img = img.convert("L")  # grayscale if your model was trained on grayscale
+    img = img.resize((48, 48))
+    img_array = image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array /= 255.0
 
-    # Predict emotion
-    predictions = model.predict(img_array)
-    max_index = int(np.argmax(predictions))
-    predicted_emotion = emotion_labels[max_index]
+    # Prediction
+    with st.spinner("Analyzing emotion..."):
+        predictions = model.predict(img_array)
+        emotion_index = int(np.argmax(predictions))
+        confidence = float(np.max(predictions))
 
-    # Remove temporary image
-    os.remove(filepath)
+    st.success(f"**Predicted Emotion:** {emotion_labels[emotion_index]}")
+    st.write(f"**Confidence:** {confidence * 100:.2f}%")
 
-    return jsonify({'emotion': predicted_emotion})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# ----------------------------
+# Footer
+# ----------------------------
+st.markdown("---")
+st.caption("Developed by Davida Essen — Emotion Detection Project")
