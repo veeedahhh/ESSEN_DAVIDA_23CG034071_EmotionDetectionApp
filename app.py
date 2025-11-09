@@ -63,6 +63,9 @@ if uploaded_file is not None:
     img_array = np.expand_dims(img_array, axis=0)
     img_array = img_array.astype("float32") / 255.0
 
+    #Debugging Info
+    st.write("Image array shape:", img_array.shape)
+    st.write("Model input shape:", model.input_shape)
     # Prediction
     with st.spinner("Analyzing emotion..."):
         predictions = model.predict(img_array)
