@@ -1,82 +1,55 @@
 
 import streamlit as st
-import tensorflow as tf
-import numpy as np
-from tensorflow.keras.preprocessing import image
 from PIL import Image
+import numpy as np
+from tensorflow.keras.models import load_model
 
 # ----------------------------
-# Title and description
+# Load your trained model
 # ----------------------------
-st.set_page_config(page_title="Emotion Detection App", page_icon="😊", layout="centered")
-
-st.title("😊 Emotion Detection App")
-st.write("Upload an image, and the model will predict the emotion displayed.")
+# Make sure your model file is in the same folder as app.py
+model = load_model("model.h5")
 
 # ----------------------------
-# Load the trained model
+# Streamlit App Layout
 # ----------------------------
-@st.cache_resource
-def load_model():
-    model = tf.keras.models.load_model("model.h5")
-    return model
-
-model = load_model()
+st.title("Emotion Detection App")
+st.write("Upload an image and the AI will predict the emotion.")
 
 # ----------------------------
-# Define emotion labels
+# Image Uploader
 # ----------------------------
-emotion_labels = {
-    0: "Angry",
-    1: "Disgust",
-    2: "Fear",
-    3: "Happy",
-    4: "Neutral",
-    5: "Sad",
-    6: "Surprise"
-}
-
-# ----------------------------
-# File uploader
-# ----------------------------
-uploaded_file = st.file_uploader("Upload an image file", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
+    # Load the image
     img = Image.open(uploaded_file)
-    st.image(img, caption="Uploaded Image", use_column_width=True)
-
-    #Convert to RBG if necessary(ensures 3 color channels)
-
-if img.mode != "RGB":
-    img = img.convert("RGB")  # ensure 3 color channels
-
-
-    # Resize image to 48x48 (the model’s input size)
+    
+    # Convert to RGB if not already
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+    
+    # Resize to model input size
     img = img.resize((48, 48))
-
-    # Convert to array
-    img_array = image.img_to_array(img)
-
-    # Ensure correct shape (48, 48, 1)
-    if img_array.shape[-1] != 1:
-        img_array = np.expand_dims(img_array[:, :, 0], axis=-1)
-
-    # Expand batch dimension and normalize
+    
+    # Convert image to numpy array and normalize
+    img_array = np.array(img) / 255.0
+    
+    # Add batch dimension
     img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array.astype("float32") / 255.0
-
-   
-    # Prediction
-    with st.spinner("Analyzing emotion..."):
-        predictions = model.predict(img_array)
-        emotion_index = int(np.argmax(predictions))
-        confidence = float(np.max(predictions))
-
-    st.success(f"**Predicted Emotion:** {emotion_labels[emotion_index]}")
-    st.write(f"**Confidence:** {confidence * 100:.2f}%")
-
-# ----------------------------
-# Footer
-# ----------------------------
-st.markdown("---")
-st.caption("Developed by Davida Essen — Emotion Detection Project")
+    
+    # Display uploaded image
+    st.image(img, caption="Uploaded Image", use_column_width=True)
+    
+    # ----------------------------
+    # Make Prediction
+    # ----------------------------
+    predictions = model.predict(img_array)
+    
+    # Assuming your model outputs probabilities for 7 emotions
+    # Replace these labels with your dataset's actual labels
+    emotion_labels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
+    predicted_class = np.argmax(predictions)
+    predicted_emotion = emotion_labels[predicted_class]
+    
+    st.write(f"Predicted Emotion: **{predicted_emotion}**")
