@@ -45,12 +45,23 @@ if uploaded_file is not None:
     img = Image.open(uploaded_file)
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    # Preprocess image
-    img = img.convert("L")  # grayscale if your model was trained on grayscale
+    # Convert to grayscale if needed
+    if img.mode != "L":
+        img = img.convert("L")  # grayscale
+
+    # Resize image to 48x48 (the model’s input size)
     img = img.resize((48, 48))
+
+    # Convert to array
     img_array = image.img_to_array(img)
+
+    # Ensure correct shape (48, 48, 1)
+    if img_array.shape[-1] != 1:
+        img_array = np.expand_dims(img_array[:, :, 0], axis=-1)
+
+    # Expand batch dimension and normalize
     img_array = np.expand_dims(img_array, axis=0)
-    img_array /= 255.0
+    img_array = img_array.astype("float32") / 255.0
 
     # Prediction
     with st.spinner("Analyzing emotion..."):
