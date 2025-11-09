@@ -13,7 +13,7 @@ model = load_model("model.h5")
 # ----------------------------
 # Streamlit App Layout
 # ----------------------------
-st.title("Emotion Detection App")
+st.title("😊Emotion Detection App")
 st.write("Upload an image and the AI will predict the emotion.")
 
 # ----------------------------
