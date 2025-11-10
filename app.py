@@ -62,19 +62,32 @@ emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surpri
 # ==============================
 st.set_page_config(page_title="Emotion Detection App", page_icon="😊", layout="centered")
 st.title("😊 Emotion Detection App")
-st.write("Upload an image to detect the emotion and save the result to the database.")
+st.write("Upload an image or take a picture to detect the emotion and save the result to the database.")
 
 # User inputs
 name = st.text_input("Enter your name:")
 mode = st.radio("Select mode:", ["online", "offline"])
+
+st.write("You can either upload an image or take a picture with your webcam:")
+
+# Option 1: Upload image
 uploaded_file = st.file_uploader("Upload an image:", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    # Display image
-    img = Image.open(uploaded_file)
-    st.image(img, caption="Uploaded Image", use_column_width=True)
+# Option 2: Take picture with camera
+camera_image = st.camera_input("Take a picture with your webcam:")
 
-    # Ensure image is RGB
+# Choose which image to use
+if uploaded_file is not None:
+    img = Image.open(uploaded_file)
+elif camera_image is not None:
+    img = Image.open(camera_image)
+else:
+    img = None
+
+# Proceed if an image is provided
+if img is not None:
+    st.image(img, caption="Selected Image", use_column_width=True)
+
     if img.mode != "RGB":
         img = img.convert("RGB")
 
@@ -93,12 +106,15 @@ if uploaded_file is not None:
         if name.strip() == "":
             st.warning("Please enter your name before saving.")
         else:
-            # Save image to folder
-            image_path = os.path.join("user_images", uploaded_file.name)
-            with open(image_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
+            # Determine filename for saving
+            if uploaded_file is not None:
+                filename = uploaded_file.name
+            else:
+                filename = "camera_image.png"
 
-            # Save record to database
+            image_path = os.path.join("user_images", filename)
+            img.save(image_path)
+
             save_user(name, image_path, predicted_label, mode)
             st.success("✅ Data saved successfully!")
 
@@ -110,4 +126,3 @@ st.subheader("📁 Database Information")
 st.text("Database Name: emotion_users.db")
 st.text("Stored Path: ./emotion_users.db")
 st.text("Images Folder: ./user_images/")
-st.text("Database Link (Local): sqlite:///emotion_users.db")
