@@ -7,3 +7,5 @@ opencv-python == 4.8.0.76
 numpy ==1.26.0
 
 pillow
+
+sqlalchemy
